@@ -75,15 +75,15 @@ Un workflow en **n8n** que automatiza todo el ciclo de vigilancia informativa:
 
 **Vista general del workflow en n8n**
 
-![Workflow completo](docs/img/workflow.png)
+![Workflow completo](workflow.png)
 
 **Configuración del filtro por palabras clave**
 
-![Nodo Filter](docs/img/filter.png)
+![Nodo Filter](filter.png)
 
 **Ejemplo del correo recibido**
 
-![Correo resultante](docs/img/email.png)
+![Correo resultante](email.png)
 
 ## 📋 Requisitos
 
