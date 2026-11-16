@@ -1,0 +1,224 @@
+{
+  "name": "Resumen Económico Diario",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3479fe5e-87de-407a-9e92-b101ef3111b3",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://www.eleconomista.es/rss/rss-mercados.php",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        -144
+      ],
+      "id": "0d77266f-7b50-4b5f-8ca9-81e143b19f1a",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.bbci.co.uk/mundo/economia/rss.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        160
+      ],
+      "id": "fc6fa720-5569-48bc-9f27-0edd4fb4aca3",
+      "name": "RSS Read1"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        528,
+        -16
+      ],
+      "id": "35d673af-f619-434e-a444-d43a763ddf33",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "0fa68960-f42e-4220-a090-75f8bba4c354",
+              "leftValue": "={{ /Inflaci[oó]n|PIB|Tasas|Banco Central|Empleo|Recesión/i.test(($json.title || '') + ' ' + ($json.contentSnippet || '')) }}",
+              "rightValue": "=Inflación",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        784,
+        0
+      ],
+      "id": "3f7a565c-ee36-4851-889b-0848cc8d2078",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst escapeHtml = (str = '') =>\n  String(str)\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\"/g, '&quot;');\n\nconst getSource = (link = '') => {\n  try {\n    return new URL(link).hostname.replace(/^www\\./, '');\n  } catch (e) {\n    return 'Fuente desconocida';\n  }\n};\n\nconst fecha = new Date().toLocaleDateString('es-ES', {\n  weekday: 'long',\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric',\n  timeZone: 'Europe/Madrid',\n});\nconst fechaCap = fecha.charAt(0).toUpperCase() + fecha.slice(1);\n\nconst lista = items\n  .map((item) => {\n    const { title, link } = item.json;\n    if (!title || !link) return '';\n    return `\n      <li style=\"margin-bottom:14px;line-height:1.4;\">\n        <a href=\"${escapeHtml(link)}\" style=\"color:#1a4d8f;text-decoration:none;font-weight:600;\">${escapeHtml(title)}</a>\n        <br>\n        <span style=\"color:#888;font-size:12px;\">${escapeHtml(getSource(link))}</span>\n      </li>`;\n  })\n  .join('');\n\nconst html = `\n<div style=\"background-color:#f5f7fa;padding:24px;font-family:Arial,Helvetica,sans-serif;\">\n  <div style=\"max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;padding:24px;\">\n    <h1 style=\"margin:0 0 4px 0;font-size:22px;color:#222;\">☕ Tu resumen económico de hoy</h1>\n    <p style=\"margin:0 0 20px 0;color:#888;font-size:13px;\">${escapeHtml(fechaCap)}</p>\n    <ul style=\"padding-left:20px;margin:0;font-size:15px;color:#333;\">\n      ${lista}\n    </ul>\n  </div>\n</div>`;\n\nreturn [{ json: { html } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        0
+      ],
+      "id": "8eb2a56b-cad9-4dda-931c-0f20b9cde323",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "jjaalm2000@gmail.com",
+        "subject": "📊 Resumen económico — {{ $now.format('dd/MM/yyyy') }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        0
+      ],
+      "id": "61d3f27f-6fc8-4364-8464-7c3aca713332",
+      "name": "Send a message",
+      "webhookId": "0c378181-449f-4211-a43c-2e2e9b7426d1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gTfYuNNwfjF54Hwo",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Read1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "31a8ac79-12c6-45a0-b86a-9f4fe14241ad",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "384cd31b6fa03a9968513f9c3cdaad2ef393b02dcb14c584096b46b04ecc2bd3"
+  },
+  "nodeGroups": [],
+  "id": "3tJGC2Rgi0xJCx5g",
+  "tags": []
+}
